@@ -1,0 +1,12 @@
+{
+  "name": "matheus",
+  "version": "1.0.0",
+  "description": "primeiro exercicio da disciplina de Back-End I",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "type":"module",
+  "author": "Matheus",
+  "license": "ISC"
+}
