@@ -1,81 +1,37 @@
-const mysql = require('mysql2/promise');
+// db.js
+const mysql = require('mysql2');
 
-// Configuração de conexão com o banco de dados
-const dbConfig = {
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || 'escola',
-    database: process.env.DB_NAME || 'mynode',
+// Configuração da conexão
+const pool = mysql.createPool({
+    host: 'localhost',        // Endereço do servidor MySQL
+    user: 'root',      // Seu usuário do MySQL
+    password: 'escola',    // Sua senha do MySQL
+    database: 'exmynode',    // Nome do banco de dados
     waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-};
+    connectionLimit: 10,      // Número máximo de conexões no pool
+    queueLimit: 0,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 0
+});
 
-// Criar pool de conexões
-let pool;
+// Converter o pool para usar promises
+const promisePool = pool.promise();
 
-// Função para inicializar o pool
-async function initializePool() {
+// Função para testar a conexão
+async function testConnection() {
     try {
-        pool = mysql.createPool(dbConfig);
-        console.log('✓ Pool de conexões criado com sucesso');
-        return pool;
+        const connection = await promisePool.getConnection();
+        console.log('✅ Conexão com MySQL estabelecida com sucesso!');
+        connection.release(); // Libera a conexão de volta para o pool
+        return true;
     } catch (error) {
-        console.error('✗ Erro ao criar pool de conexões:', error);
-        throw error;
+        console.error('❌ Erro ao conectar com MySQL:', error.message);
+        return false;
     }
 }
 
-// Função para obter uma conexão do pool
-async function getConnection() {
-    try {
-        if (!pool) {
-            await initializePool();
-        }
-        const connection = await pool.getConnection();
-        console.log('✓ Conexão obtida do pool');
-        return connection;
-    } catch (error) {
-        console.error('✗ Erro ao obter conexão:', error);
-        throw error;
-    }
-}
-
-// Função para executar queries
-async function query(sql, values = []) {
-    let connection;
-    try {
-        connection = await getConnection();
-        const [results] = await connection.execute(sql, values);
-        return results;
-    } catch (error) {
-        console.error('✗ Erro ao executar query:', error);
-        throw error;
-    } finally {
-        if (connection) {
-            await connection.release();
-        }
-    }
-}
-
-// Função para fechar o pool
-async function closePool() {
-    try {
-        if (pool) {
-            await pool.end();
-            console.log('✓ Pool de conexões fechado');
-        }
-    } catch (error) {
-        console.error('✗ Erro ao fechar pool:', error);
-        throw error;
-    }
-}
-
-// Exportar funções
+// Exportar as funções e o pool
 module.exports = {
-    initializePool,
-    getConnection,
-    query,
-    closePool,
-    pool: () => pool
-};
+    pool: promisePool,
+    testConnection,
+ };
